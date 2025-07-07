@@ -1,6 +1,5 @@
 import boto3
 import os
-import random
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -14,13 +13,13 @@ dynamodb = boto3.resource(
 
 table = dynamodb.Table(os.getenv("DYNAMODB_TABLE"))
 
-def create_cart(user_id):
-    cart_id = random.randint(1_000_000, 9_999_999) 
-    table.put_item(
-        Item={
-            "id": cart_id, 
-            "user_id": user_id,
-            "product_ids": []
-        }
+def get_orders_by_user_id(user_id):
+    response = table.query(
+        IndexName='user_id-index',  # Asegúrate de tener este GSI en DynamoDB
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('user_id').eq(user_id)
     )
-    return cart_id
+    return response.get('Items', [])
+
+def get_order_by_id(order_id):
+    response = table.get_item(Key={"id": order_id})
+    return response.get('Item')
